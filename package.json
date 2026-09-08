@@ -13,6 +13,8 @@
     "test": "turbo test",
     "backend:seed": "turbo seed --filter=@dtc/backend",
     "backend:dev": "turbo dev --filter=@dtc/backend",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
     "storefront:dev": "turbo dev --filter=@dtc/storefront"
   },
   "pnpm": {
