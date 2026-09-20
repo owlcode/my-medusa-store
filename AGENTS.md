@@ -152,3 +152,20 @@ claude mcp add --transport http medusa https://docs.medusajs.com/mcp # or agent 
 - `.env` / `.env.local` — never commit, print, or copy secret values out of them. Edit `.env.template` instead when documenting a new variable.
 - Existing migrations in `src/modules/*/migrations/` — add a new migration rather than rewriting one that may already have run.
 - Don't run destructive DB commands (drops, `db:migrate --help`-style flags that reset state) against the user's database without explicit confirmation.
+
+## Ways of Working
+
+Every self-contained task (a feature, a fix, a doc change) runs through the same loop, start to finish. Do not stop half-way and hand back a branch.
+
+1. **New worktree.** Never edit `main` directly.
+   `git fetch origin main && git worktree add .worktrees/<task-slug> -b <task-slug> origin/main`
+   (Claude Code's `EnterWorktree` uses `.claude/worktrees/` instead; both dirs are gitignored.)
+   One task = one worktree = one PR. Do not stack unrelated tasks in one branch.
+2. **Continue until it is ready.** Work inside the worktree. Small commits. Run what the change touches before calling it done: `<pm> run lint`, `<pm> run build`, `<pm> run test`. "Ready" means the change does what the task asked, local checks pass, and docs are updated if behaviour changed.
+3. **Create the PR and merge it to main.**
+   `git push -u origin <task-slug> && gh pr create --fill && gh pr merge --squash --delete-branch`
+   Do not wait for a human review unless the task says so or the change is risky: data migrations, payment or fulfillment config, secrets.
+4. **Evaluate CI on main. Everything must be green.**
+   `gh run list --branch main --limit 10`. The only workflow here (`update.yaml`) is manual, so a merge normally triggers nothing; local lint, build and tests are the gate. If a run on main is red, fix forward from a new worktree immediately. Never leave main red.
+5. **Remove the worktree.**
+   `git worktree remove .worktrees/<task-slug> && git branch -d <task-slug>` (the PR merge already deleted the remote branch), then `git pull --ff-only` in the main checkout.
